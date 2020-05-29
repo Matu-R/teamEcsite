@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+
+<link href="/css/reset.css" th:href="@{/css/reset.css}" rel="stylesheet" />
+<link href="/css/style.css" th:href="@{/css/style.css}" rel="stylesheet" />
+
+<title>PhoenixBakery</title>
+
+</head>
+
+<body>
+
+<header th:insert="fragments/page_header::pageHeader"></header>
+
+<main>
+
+	<div class="container cart">
+		<div>
+			<h2 th:if="${destinations != null && destinations.size() > 0}">宛先を選択し、決済を完了します。</h2>
+			<p class="info"	th:if="${destinations != null && destinations.size() > 0}">宛先の新規登録、削除も可能です。</p>
+			<p class="info"	th:if="${destinations == null || destinations.size() == 0}">宛先情報がありません。新規登録してください。</p>
+		</div>
+
+		<table class="destination"	th:if="${destinations != null && destinations.size() > 0}" >
+			<tr>
+				<th>選択</th><th>宛先氏名</th><th>住所</th><th>電話番号</th>
+			</tr>
+			<tr th:each="destination, st: ${destinations}" >
+				<td><input type="radio" name="id" th:checked="${st.index==0}"	th:value="${destination.id}" class="radio" /></td>
+				<td>
+					<span th:text="${destination.familyName}"></span><span>　</span><span th:text="${destination.firstName}"></span>
+				</td>
+				<td th:text="${destination.address}"/>
+				<td th:text="${destination.telNumber}"/>
+			</tr>
+		</table>
+		
+		<div class="buttonArea">	
+			<button id="deleteButton" th:if="${destinations != null && destinations.size() > 0}">削除</button>
+			<form name="searchItemForm" action="/phoenix/destination/">
+				<button type="submit" >新規宛先</button>
+			</form>
+			<button th:if="${destinations != null && destinations.size() > 0}" id="settlementButton">決済</button>
+		</div>
+	</div>
+</main>
+
+<script>
+
+$(() => {
+	$('#deleteButton').on('click', () => {
+		let checked = $('.radio:checked');
+		let destinationId = $(checked).val();
+		deleteDestination(destinationId, checked);
+	});
+	
+	$('#settlementButton').on('click', () => {
+		let checked = $('.radio:checked');
+		let destinationId = $(checked).val();
+		settlement(destinationId);
+	});
+});
+
+function deleteDestination(destinationId, checked) {
+	$.ajax({
+		type: 'POST',
+		url: '/phoenix/destination/delete',
+		data: JSON.stringify({'destinationId': destinationId}),
+		datatype: 'json',
+		contentType: 'application/json',
+	})
+	.then((result) => {
+		$(checked).parent().parent().remove();
+		let radioList = $('.radio');
+		if (radioList.length == 0) {
+			location.replace('/phoenix/settlement/');
+		}
+		radioList[0].checked = true;
+	}, () => {
+		alert('Error: ajax connection failed.');
+	});
+}
+</script>
+</body>
+</html>
